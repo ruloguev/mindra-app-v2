@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindra: Caja de Herramientas de Calma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts Import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Inter:wght@300;500&family=Karla:wght@400;700&family=Marcellus&family=Work+Sans&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Colors */
+            --sage-green: #A8D5B9;
+            --lavender-purple: #C4A7E7;
+            --misty-turquoise: #92D9D0;
+            --stone-gray: #7D8386;
+            --blue-black: #2E2F3E;
+            --deep-indigo: #4B3F72;
+
+            /* Typography */
+            --font-logo: 'Cormorant Garamond', serif;
+            --font-heading: 'Marcellus', serif;
+            --font-body: 'Karla', sans-serif;
+            --font-ui: 'Inter', sans-serif;
+        }
+
+        body { 
+            font-family: var(--font-body);
+            background-color: var(--sage-green);
+            color: var(--blue-black);
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            color: var(--deep-indigo);
+        }
+        .font-logo { font-family: var(--font-logo); }
+        .font-ui { font-family: var(--font-ui); }
+
+        #breathing-circle, #body-bg { 
+            transition: all 4000ms cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .view { display: none; }
+        .view.active { display: flex; }
+        
+        .nav-button { color: var(--stone-gray); font-family: var(--font-ui); font-weight: 500; }
+        .nav-button.active { color: var(--deep-indigo); }
+
+        .content-card { 
+            animation: fadeIn 0.5s ease-in-out; 
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(200, 200, 200, 0.2);
+        }
+
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        .custom-input {
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--misty-turquoise);
+            color: var(--blue-black);
+            font-family: var(--font-body);
+        }
+        .custom-input::placeholder { color: var(--stone-gray); }
+        .custom-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--lavender-purple);
+        }
+        
+        .primary-button {
+            background-color: var(--misty-turquoise);
+            color: var(--blue-black);
+            font-family: var(--font-ui);
+            font-weight: 500;
+        }
+        .primary-button:hover { background-color: #80c9c0; }
+        .primary-button:disabled { background-color: #b0c4c1; cursor: not-allowed; }
+
+        .secondary-button {
+            background-color: var(--lavender-purple);
+            color: white;
+            font-family: var(--font-ui);
+            font-weight: 500;
+        }
+        .secondary-button:hover { background-color: #b396d6; }
+        
+        .learn-detail-view { display: none; }
+        .learn-detail-view.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        
+        /* Onboarding Styles */
+        #onboarding-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--sage-green);
+            z-index: 100; display: flex; flex-direction: column;
+        }
+        .onboarding-slide {
+            display: none; flex-direction: column; justify-content: center;
+            align-items: center; text-align: center; padding: 2rem; height: 100%;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .onboarding-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .onboarding-content {
+            position: relative;
+            z-index: 10;
+        }
+        .onboarding-slide.active { display: flex; animation: fadeIn 0.5s ease-in-out; }
+        
+        /* Chat Styles */
+        .chat-bubble-user {
+            background-color: var(--misty-turquoise);
+            color: var(--blue-black);
+        }
+        .chat-bubble-model {
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body id="body-bg" class="flex flex-col">
+
+    <!-- ONBOARDING -->
+    <div id="onboarding-container" class="hidden">
+        <div id="onboarding-slide-1" class="onboarding-slide" style="background-image: url('lago.jpg');">
+            <div class="onboarding-overlay"></div>
+            <div class="onboarding-content">
+                <h1 class="font-logo text-6xl text-white">Mindra</h1>
+                <p class="text-xl mt-4 text-white/90">Un espacio para encontrar tu calma.</p>
+                <button class="onboarding-next primary-button py-3 px-8 rounded-full mt-12">Comenzar</button>
+            </div>
+        </div>
+        <div id="onboarding-slide-2" class="onboarding-slide">
+            <div class="onboarding-content">
+                <h2 class="text-3xl">Cuéntanos sobre ti</h2>
+                <p class="mt-4 mb-6" style="color: var(--stone-gray);">Esto nos ayuda a personalizar tu espacio.</p>
+                <div class="w-full max-w-sm space-y-4">
+                    <input type="text" id="onboarding-name" class="w-full custom-input rounded-lg p-3" placeholder="Tu nombre">
+                    <input type="number" id="onboarding-age" class="w-full custom-input rounded-lg p-3" placeholder="Tu edad">
+                    <input type="email" id="onboarding-email" class="w-full custom-input rounded-lg p-3" placeholder="Tu correo electrónico">
+                    <div class="flex space-x-2">
+                        <select id="onboarding-country-code" class="custom-input rounded-lg p-3"></select>
+                        <input type="tel" id="onboarding-phone" class="w-full custom-input rounded-lg p-3" placeholder="Tu teléfono">
+                    </div>
+                </div>
+                <button class="onboarding-next primary-button py-3 px-8 rounded-full mt-8">Siguiente</button>
+            </div>
+        </div>
+        <div id="onboarding-slide-3" class="onboarding-slide">
+             <div class="onboarding-content">
+                <h2 class="text-3xl">¿Qué te trae por aquí?</h2>
+                <p class="mt-4 mb-6" style="color: var(--stone-gray);">Tómate un momento para conectar con tu intención. Esto es solo para ti.</p>
+                <textarea id="onboarding-intention" class="w-full max-w-sm custom-input rounded-lg p-3" rows="4" placeholder="Ej: Quiero sentirme menos ansioso/a..."></textarea>
+                <button class="onboarding-next primary-button py-3 px-8 rounded-full mt-8">Siguiente</button>
+            </div>
+        </div>
+        <div id="onboarding-slide-4" class="onboarding-slide">
+             <div class="onboarding-content">
+                <h2 class="text-3xl">Una idea importante</h2>
+                <p class="mt-4 max-w-md" style="color: var(--stone-gray);">Imagina que estás en arenas movedizas. Tu instinto te dice que luches, pero eso solo te hunde más. A veces, con las emociones difíciles pasa lo mismo.</p>
+                <p class="mt-4 max-w-md" style="color: var(--stone-gray);">Mindra te invita a probar algo diferente: dejar de luchar y, en su lugar, aprender a flotar.</p>
+                <button class="onboarding-next primary-button py-3 px-8 rounded-full mt-12">Entendido</button>
+            </div>
+        </div>
+        <div id="onboarding-slide-5" class="onboarding-slide">
+             <div class="onboarding-content">
+                <h2 class="text-3xl">Todo está listo para ti</h2>
+                <p class="mt-4" style="color: var(--stone-gray);">Empecemos con una pausa de calma.</p>
+                <button id="finish-onboarding" class="primary-button py-3 px-8 rounded-full mt-12">Entrar a Mindra</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal de la App -->
+    <div id="app-container" class="hidden">
+        <main class="flex-grow flex flex-col p-4 pb-24">
+            <!-- VISTA 1: CALMA (Respiración) -->
+            <div id="calm-view" class="view active flex-col items-center justify-center text-center h-full">
+                <h1 class="font-logo text-5xl mb-4" style="color: var(--deep-indigo);">Mindra</h1>
+                <div class="flex-grow flex flex-col items-center justify-center">
+                    <div class="relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center">
+                        <div id="breathing-circle" class="absolute w-full h-full rounded-full" style="background-image: linear-gradient(to bottom right, var(--misty-turquoise), var(--lavender-purple)); transform: scale(0.4);"></div>
+                        <span id="breathing-text" class="relative text-2xl text-white z-10 transition-opacity duration-1000 opacity-0 font-ui"></span>
+                    </div>
+                    <p id="breathing-instructions" class="mt-4 text-center max-w-xs h-12 opacity-0 transition-opacity duration-1000" style="color: var(--deep-indigo);"></p>
+                </div>
+                <div id="calm-controls" class="flex flex-col items-center w-full">
+                    <div class="flex items-center space-x-6">
+                         <button id="audio-toggle-btn" class="p-3 rounded-full text-slate-500 hover:bg-white/50 transition-colors duration-300">
+                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                         </button>
+                        <button id="toggle-button" class="primary-button py-4 px-10 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">Empezar</button>
+                        <div class="w-10"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA 2: DEFUSIÓN -->
+            <div id="defusion-view" class="view hidden flex-col w-full max-w-lg mx-auto h-full pt-8">
+                <h1 class="text-3xl mb-2">Diario de Defusión</h1>
+                <p class="mb-6" style="color: var(--stone-gray);">Escribe un pensamiento difícil y te ayudaremos a tomar distancia de él.</p>
+                <textarea id="thought-input" class="w-full custom-input rounded-lg p-3" rows="3" placeholder="Ej: No soy lo suficientemente bueno..."></textarea>
+                <button id="defuse-button" class="mt-4 primary-button py-2 px-4 rounded-lg w-full">Crear Distancia</button>
+                <div id="defusion-output" class="mt-6 space-y-4 text-left overflow-y-auto"></div>
+            </div>
+
+            <!-- VISTA 3: VALORES -->
+            <div id="values-view" class="view hidden flex-col w-full max-w-lg mx-auto h-full pt-8 overflow-y-auto">
+                <div class="flex justify-between items-center">
+                    <div><h1 class="text-3xl mb-2">Brújula de Valores</h1><p class="mb-6" style="color: var(--stone-gray);">Conecta con lo que te importa.</p></div>
+                    <button id="save-values-button" class="secondary-button py-2 px-4 rounded-lg">Guardar</button>
+                </div>
+                <div class="space-y-4">
+                    <div class="content-card p-4 rounded-lg"><h3 class="text-xl mb-2">Relaciones</h3><p class="text-sm mb-2" style="color: var(--stone-gray);">¿Qué tipo de amigo, pareja o familiar quieres ser?</p><input id="value-relations" type="text" class="w-full custom-input rounded p-2 text-sm" placeholder="Ej: Quiero ser un amigo leal y presente..."></div>
+                    <div class="content-card p-4 rounded-lg"><h3 class="text-xl mb-2">Trabajo / Estudio</h3><p class="text-sm mb-2" style="color: var(--stone-gray);">¿Qué cualidades quieres aportar?</p><input id="value-work" type="text" class="w-full custom-input rounded p-2 text-sm" placeholder="Ej: Ser diligente, creativo y colaborador..."></div>
+                    <div class="content-card p-4 rounded-lg"><h3 class="text-xl mb-2">Crecimiento Personal</h3><p class="text-sm mb-2" style="color: var(--stone-gray);">¿Cómo te gustaría crecer como persona?</p><input id="value-growth" type="text" class="w-full custom-input rounded p-2 text-sm" placeholder="Ej: Aprender cosas nuevas, ser valiente..."></div>
+                </div>
+                <div class="mt-8">
+                    <h2 class="text-2xl mb-2">Acciones Comprometidas</h2>
+                    <p class="mb-4" style="color: var(--stone-gray);">Añade pequeños pasos alineados con tus valores.</p>
+                    <div class="flex space-x-2">
+                        <input id="new-action-input" type="text" class="w-full custom-input rounded-lg p-3" placeholder="Ej: Llamar a un amigo...">
+                        <button id="add-action-btn" class="primary-button px-4 rounded-lg">Añadir</button>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <h3 class="text-xl mb-2">Pendientes</h3>
+                    <ul id="pending-actions-list" class="space-y-2"></ul>
+                </div>
+                <div class="mt-6">
+                    <h3 class="text-xl mb-2">Completadas</h3>
+                    <ul id="completed-actions-list" class="space-y-2"></ul>
+                </div>
+                <p id="save-status" class="text-sm mt-4 h-4 font-ui" style="color: var(--lavender-purple);"></p>
+            </div>
+
+            <!-- VISTA 4: APRENDER (Contenedor principal) -->
+            <div id="learn-view" class="view hidden flex-col w-full max-w-lg mx-auto h-full pt-8 overflow-y-auto">
+                <div id="learn-menu" class="w-full">
+                    <h1 class="text-3xl mb-6 text-center">Biblioteca Mindra</h1>
+                    <div class="space-y-4 text-left">
+                        <button data-target="learn-detail-ansiedad" class="learn-menu-item w-full text-left content-card p-4 rounded-lg cursor-pointer"><h2 class="text-xl">Entendiendo la Ansiedad</h2><p class="text-sm" style="color: var(--stone-gray);">Una nueva perspectiva sobre esta emoción.</p></button>
+                        <button data-target="learn-detail-aceptacion" class="learn-menu-item w-full text-left content-card p-4 rounded-lg cursor-pointer"><h2 class="text-xl">Aceptación</h2><p class="text-sm" style="color: var(--stone-gray);">Hacer las paces con tu mundo interior.</p></button>
+                        <button data-target="learn-detail-defusion" class="learn-menu-item w-full text-left content-card p-4 rounded-lg cursor-pointer"><h2 class="text-xl">Defusión Cognitiva</h2><p class="text-sm" style="color: var(--stone-gray);">Quitarle el poder a tus pensamientos.</p></button>
+                        <button data-target="learn-detail-presente" class="learn-menu-item w-full text-left content-card p-4 rounded-lg cursor-pointer"><h2 class="text-xl">Momento Presente</h2><p class="text-sm" style="color: var(--stone-gray);">Anclarte en el aquí y ahora.</p></button>
+                        <button data-target="learn-detail-yo" class="learn-menu-item w-full text-left content-card p-4 rounded-lg cursor-pointer"><h2 class="text-xl">Yo como Contexto</h2><p class="text-sm" style="color: var(--stone-gray);">Descubrir al observador silencioso.</p></button>
+                        <button data-target="learn-detail-valores" class="learn-menu-item w-full text-left content-card p-4 rounded-lg cursor-pointer"><h2 class="text-xl">Valores</h2><p class="text-sm" style="color: var(--stone-gray);">Tu brújula personal.</p></button>
+                        <button data-target="learn-detail-accion" class="learn-menu-item w-full text-left content-card p-4 rounded-lg cursor-pointer"><h2 class="text-xl">Acción Comprometida</h2><p class="text-sm" style="color: var(--stone-gray);">Construir la vida que quieres vivir.</p></button>
+                    </div>
+                </div>
+                <div id="learn-detail-ansiedad" class="learn-detail-view"><button class="learn-back-button mb-4 font-ui text-sm" style="color: var(--stone-gray);">&larr; Volver a la Biblioteca</button><h1 class="text-3xl mb-4">Un Nuevo Vistazo a la Ansiedad</h1><p class="mb-4">La ansiedad es una respuesta humana natural, como un sistema de alarma. El problema no es la alarma en sí, sino cuando empezamos a luchar contra ella. Imagina que es como estar en arenas movedizas: tu instinto es luchar, pero eso solo te hunde más. Con la ansiedad, la lucha por no sentirla hace que tu mundo se encoja. El camino de Mindra es aprender a caminar junto a tu ansiedad, sin que ella decida el rumbo.</p><button class="toggle-more-info primary-button text-sm py-1 px-3 rounded-full">Saber más...</button><div class="more-info hidden mt-4 space-y-2"><p><strong>La Trampa de la Lucha:</strong> Cuando intentas desesperadamente controlar o eliminar la ansiedad, le das más importancia y poder. Cada intento fallido refuerza la idea de que es peligrosa e incontrolable. Esta lucha consume tu energía y te aleja de las cosas que te importan.</p><p><strong>Ansiedad como Señal:</strong> A veces, la ansiedad puede ser una señal útil. Puede indicar que te enfrentas a algo que te importa mucho, como un desafío o una oportunidad de crecimiento. En lugar de verla como una señal de "stop", podemos verla como una señal de que estamos vivos y al borde de algo significativo.</p></div><div class="mt-6"><button class="toggle-note-form primary-button text-sm py-1 px-3 rounded-full">+ Añadir nota personal</button><div class="note-form hidden mt-2"><textarea class="w-full custom-input rounded-lg p-2" rows="3" placeholder="Escribe tu reflexión aquí..."></textarea><button class="save-note-btn secondary-button text-sm py-1 px-2 rounded-md mt-2">Guardar Nota</button></div><div class="personal-note content-card p-3 mt-4 hidden"><p class="text-sm"></p></div></div></div>
+                <div id="learn-detail-aceptacion" class="learn-detail-view"><button class="learn-back-button mb-4 font-ui text-sm" style="color: var(--stone-gray);">&larr; Volver a la Biblioteca</button><h1 class="text-3xl mb-4">Aceptación</h1><p class="mb-4">Aceptar no es resignarse, sino dejar de pelear una guerra imposible contra tus propias emociones. Es una decisión valiente de abrir un espacio en tu interior para que los sentimientos difíciles puedan estar ahí, sin necesidad de que se vayan para que tú puedas seguir viviendo tu vida. Es un "sí" activo a tu experiencia.</p><button class="toggle-more-info primary-button text-sm py-1 px-3 rounded-full">Saber más...</button><div class="more-info hidden mt-4 space-y-2"><p><strong>¿Cómo se practica?</strong> Empieza por notar una emoción en tu cuerpo. En lugar de tensarte, intenta relajar los músculos a su alrededor. Respira "hacia" la sensación, como si le dieras aire para existir. No tienes que hacer que te guste, solo permitirle ser. Por ejemplo, ante la ansiedad, puedes decir: "Ok, aquí está la ansiedad. Le hago un sitio y la dejo estar mientras sigo con mi día".</p></div><div class="mt-6"><button class="toggle-note-form primary-button text-sm py-1 px-3 rounded-full">+ Añadir nota personal</button><div class="note-form hidden mt-2"><textarea class="w-full custom-input rounded-lg p-2" rows="3" placeholder="Escribe tu reflexión aquí..."></textarea><button class="save-note-btn secondary-button text-sm py-1 px-2 rounded-md mt-2">Guardar Nota</button></div><div class="personal-note content-card p-3 mt-4 hidden"><p class="text-sm"></p></div></div></div>
+                <div id="learn-detail-defusion" class="learn-detail-view"><button class="learn-back-button mb-4 font-ui text-sm" style="color: var(--stone-gray);">&larr; Volver a la Biblioteca</button><h1 class="text-3xl mb-4">Defusión Cognitiva</h1><p class="mb-4">Es el arte de "dar un paso atrás" y ver tus pensamientos como lo que son: un simple flujo de palabras e imágenes que tu mente produce. No son órdenes ni verdades absolutas. La defusión te permite observar tus pensamientos en lugar de enredarte con ellos.</p><button class="toggle-more-info primary-button text-sm py-1 px-3 rounded-full">Saber más...</button><div class="more-info hidden mt-4 space-y-2"><p><strong>Técnica Clave:</strong> El truco más simple y poderoso es añadir la frase "Estoy teniendo el pensamiento de que..." antes de tu pensamiento difícil. En vez de "Soy un fracaso", prueba con "Estoy teniendo el pensamiento de que soy un fracaso". ¿Notas la diferencia? El pensamiento ya no es una definición de quién eres, sino un evento mental que estás observando. Esto crea un espacio para que puedas elegir cómo responder, en lugar de reaccionar automáticamente.</p></div><div class="mt-6"><button class="toggle-note-form primary-button text-sm py-1 px-3 rounded-full">+ Añadir nota personal</button><div class="note-form hidden mt-2"><textarea class="w-full custom-input rounded-lg p-2" rows="3" placeholder="Escribe tu reflexión aquí..."></textarea><button class="save-note-btn secondary-button text-sm py-1 px-2 rounded-md mt-2">Guardar Nota</button></div><div class="personal-note content-card p-3 mt-4 hidden"><p class="text-sm"></p></div></div></div>
+                <div id="learn-detail-presente" class="learn-detail-view"><button class="learn-back-button mb-4 font-ui text-sm" style="color: var(--stone-gray);">&larr; Volver a la Biblioteca</button><h1 class="text-3xl mb-4">Momento Presente</h1><p class="mb-4">Es la habilidad de anclar tu atención, de forma intencional y amable, en el aquí y el ahora. Gran parte de nuestro sufrimiento viene de vivir en el pasado (lamentos) o en el futuro (preocupaciones). El presente es el único lugar donde puedes actuar y vivir de verdad.</p><button class="toggle-more-info primary-button text-sm py-1 px-3 rounded-full">Saber más...</button><div class="more-info hidden mt-4 space-y-2"><p><strong>Anclas Sensoriales:</strong> Tus cinco sentidos son portales directos al momento presente. Cuando tu mente esté acelerada, haz una pausa y conecta con ellos. ¿Qué ves? ¿Qué oyes? ¿Qué sientes en tu piel? Este simple acto de "anclarte" en tus sentidos puede interrumpir el ciclo de preocupación y traerte de vuelta a la realidad, donde tienes el poder de elegir tu siguiente acción.</p></div><div class="mt-6"><button class="toggle-note-form primary-button text-sm py-1 px-3 rounded-full">+ Añadir nota personal</button><div class="note-form hidden mt-2"><textarea class="w-full custom-input rounded-lg p-2" rows="3" placeholder="Escribe tu reflexión aquí..."></textarea><button class="save-note-btn secondary-button text-sm py-1 px-2 rounded-md mt-2">Guardar Nota</button></div><div class="personal-note content-card p-3 mt-4 hidden"><p class="text-sm"></p></div></div></div>
+                <div id="learn-detail-yo" class="learn-detail-view"><button class="learn-back-button mb-4 font-ui text-sm" style="color: var(--stone-gray);">&larr; Volver a la Biblioteca</button><h1 class="text-3xl mb-4">Yo como Contexto</h1><p class="mb-4">Hay una parte de ti que es más profunda que tus pensamientos, emociones y roles. Es la parte que observa todo eso. Imagina que eres el cielo, y tus pensamientos y sentimientos son las nubes y el clima. El clima cambia constantemente, pero el cielo permanece. Conectar con esa perspectiva de "cielo" te da estabilidad.</p><button class="toggle-more-info primary-button text-sm py-1 px-3 rounded-full">Saber más...</button><div class="more-info hidden mt-4 space-y-2"><p><strong>La Metáfora del Tablero de Ajedrez:</strong> Imagina que tus pensamientos y emociones son las piezas de un tablero de ajedrez, en una guerra constante. Normalmente, nos identificamos con las piezas "buenas" y luchamos contra las "malas". Es agotador. La perspectiva del Yo como Contexto te invita a ser el tablero. El tablero contiene toda la guerra, pero no es dañado por ella. Desde ahí, puedes observar la lucha de tu mente sin ser arrastrado por ella.</p></div><div class="mt-6"><button class="toggle-note-form primary-button text-sm py-1 px-3 rounded-full">+ Añadir nota personal</button><div class="note-form hidden mt-2"><textarea class="w-full custom-input rounded-lg p-2" rows="3" placeholder="Escribe tu reflexión aquí..."></textarea><button class="save-note-btn secondary-button text-sm py-1 px-2 rounded-md mt-2">Guardar Nota</button></div><div class="personal-note content-card p-3 mt-4 hidden"><p class="text-sm"></p></div></div></div>
+                <div id="learn-detail-valores" class="learn-detail-view"><button class="learn-back-button mb-4 font-ui text-sm" style="color: var(--stone-gray);">&larr; Volver a la Biblioteca</button><h1 class="text-3xl mb-4">Valores</h1><p class="mb-4">Son tu brújula interna. Responden a la pregunta: "¿Qué es lo que más te importa en la vida? ¿Qué tipo de persona quieres ser?". No son metas que se alcanzan, sino direcciones que guían tus acciones de forma continua, como viajar hacia el "Norte".</p><button class="toggle-more-info primary-button text-sm py-1 px-3 rounded-full">Saber más...</button><div class="more-info hidden mt-4 space-y-2"><p><strong>Valores vs. Metas:</strong> Una meta es "casarme", un valor es "ser una pareja amorosa". Una meta es "conseguir un trabajo", un valor es "ser creativo y trabajador". Puedes alcanzar una meta, pero siempre puedes actuar de acuerdo a tus valores, en cada momento. Los valores le dan sentido y propósito a tus acciones, especialmente cuando son difíciles.</p></div><div class="mt-6"><button class="toggle-note-form primary-button text-sm py-1 px-3 rounded-full">+ Añadir nota personal</button><div class="note-form hidden mt-2"><textarea class="w-full custom-input rounded-lg p-2" rows="3" placeholder="Escribe tu reflexión aquí..."></textarea><button class="save-note-btn secondary-button text-sm py-1 px-2 rounded-md mt-2">Guardar Nota</button></div><div class="personal-note content-card p-3 mt-4 hidden"><p class="text-sm"></p></div></div></div>
+                <div id="learn-detail-accion" class="learn-detail-view"><button class="learn-back-button mb-4 font-ui text-sm" style="color: var(--stone-gray);">&larr; Volver a la Biblioteca</button><h1 class="text-3xl mb-4">Acción Comprometida</h1><p class="mb-4">Es el pilar donde todo se une. Consiste en dar pasos, grandes o pequeños, en la dirección que marcan tus valores, incluso si eso significa llevar contigo algo de malestar, como la ansiedad o la duda. Es construir, acción por acción, una vida que te parezca significativa.</p><button class="toggle-more-info primary-button text-sm py-1 px-3 rounded-full">Saber más...</button><div class="more-info hidden mt-4 space-y-2"><p><strong>Pequeños Pasos:</strong> La clave es empezar con acciones pequeñas y manejables. Si tu valor es la "conexión social" pero te da ansiedad, una acción comprometida no es ir a una fiesta multitudinaria, sino quizás enviar un mensaje a un amigo. Cada pequeño paso que das alineado con tus valores, a pesar del miedo, es una victoria que fortalece tu confianza y construye la vida que realmente quieres.</p></div><div class="mt-6"><button class="toggle-note-form primary-button text-sm py-1 px-2 rounded-full">+ Añadir nota personal</button><div class="note-form hidden mt-2"><textarea class="w-full custom-input rounded-lg p-2" rows="3" placeholder="Escribe tu reflexión aquí..."></textarea><button class="save-note-btn secondary-button text-sm py-1 px-2 rounded-md mt-2">Guardar Nota</button></div><div class="personal-note content-card p-3 mt-4 hidden"><p class="text-sm"></p></div></div></div>
+            </div>
+            
+            <!-- VISTA 5: MI VIAJE -->
+            <div id="journey-view" class="view hidden flex-col w-full max-w-lg mx-auto h-full pt-8 overflow-y-auto">
+                <h1 class="text-3xl mb-6">Mi Viaje en Mindra</h1>
+                <div class="content-card p-4 rounded-lg mb-6">
+                    <h2 class="text-xl mb-2">Mi Intención</h2>
+                    <p id="journey-intention" class="italic" style="color: var(--stone-gray);"></p>
+                </div>
+                <div class="content-card p-4 rounded-lg mb-6">
+                    <h2 class="text-xl mb-2">Registro de Calma</h2>
+                    <div id="calendar-container" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+                </div>
+                <div class="content-card p-4 rounded-lg mb-6">
+                    <h2 class="text-xl mb-2">Mis Valores y Acción</h2>
+                    <div id="journey-values" class="space-y-2 text-sm"></div>
+                </div>
+                <div class="content-card p-4 rounded-lg">
+                    <h2 class="text-xl mb-2">Mis Pensamientos Trabajados</h2>
+                    <ul id="journey-thoughts" class="list-disc list-inside space-y-1 text-sm" style="color: var(--stone-gray);"></ul>
+                </div>
+            </div>
+
+            <!-- VISTA 6: CHAT -->
+            <div id="chat-view" class="view hidden flex-col w-full max-w-lg mx-auto h-full pt-8">
+                <h1 class="text-3xl mb-2">Chat de Apoyo</h1>
+                <p class="mb-4 text-sm" style="color: var(--stone-gray);">Habla sobre lo que sientes. Estoy aquí para escucharte desde la perspectiva de ACT.</p>
+                <div id="chat-messages" class="flex-grow content-card p-4 rounded-lg overflow-y-auto space-y-4">
+                    <!-- Chat messages will be appended here -->
+                </div>
+                <div id="chat-loading" class="hidden text-center p-2" style="color: var(--stone-gray);">Mindra está escribiendo...</div>
+                <div class="mt-4 flex items-center space-x-2">
+                    <input type="text" id="chat-input" class="w-full custom-input rounded-lg p-3" placeholder="Escribe tu mensaje...">
+                    <button id="chat-send-btn" class="primary-button p-3 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+                <p class="text-xs text-center mt-2" style="color: var(--stone-gray);">Powered by Gemini</p>
+            </div>
+            
+        </main>
+        
+        <nav class="bg-white/70 backdrop-blur-sm border-t border-gray-200/50 w-full flex justify-around fixed bottom-0 left-0 right-0">
+            <button data-view="calm-view" class="nav-button active flex-1 flex flex-col items-center p-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z"/><path d="M12 5v14"/><path d="M12 5a4.5 4.5 0 0 1 0 9 4.5 4.5 0 0 0 0 9"/></svg><span class="text-xs mt-1">Calma</span></button>
+            <button data-view="defusion-view" class="nav-button flex-1 flex flex-col items-center p-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="text-xs mt-1">Defusión</span></button>
+            <button data-view="chat-view" class="nav-button flex-1 flex flex-col items-center p-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg><span class="text-xs mt-1">Chat</span></button>
+            <button data-view="values-view" class="nav-button flex-1 flex flex-col items-center p-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.2 2.2-2.2-2.2-2.2 2.2-2.2-2.2-2.2 2.2 2.2 2.2 2.2 2.2 2.2-2.2 2.2 2.2 2.2-2.2-2.2-2.2-2.2-2.2z"/></svg><span class="text-xs mt-1">Valores</span></button>
+            <button data-view="learn-view" class="nav-button flex-1 flex flex-col items-center p-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="text-xs mt-1">Aprende</span></button>
+            <button data-view="journey-view" class="nav-button flex-1 flex flex-col items-center p-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span class="text-xs mt-1">Mi Viaje</span></button>
+        </nav>
+    </div>
+    
+    <!-- Audio Element -->
+    <audio id="background-audio" loop src="https://www.soundjay.com/nature/sounds/river-2.mp3"></audio>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM ELEMENTS ---
+    const appContainer = document.getElementById('app-container');
+    const onboardingContainer = document.getElementById('onboarding-container');
+    const onboardingSlides = document.querySelectorAll('.onboarding-slide');
+    const onboardingNextButtons = document.querySelectorAll('.onboarding-next');
+    const finishOnboardingButton = document.getElementById('finish-onboarding');
+    const views = document.querySelectorAll('.view');
+    const navButtons = document.querySelectorAll('.nav-button');
+    const bodyBg = document.getElementById('body-bg');
+
+    // Calm View
+    const circle = document.getElementById('breathing-circle');
+    const breathingText = document.getElementById('breathing-text');
+    const breathingInstructions = document.getElementById('breathing-instructions');
+    const toggleButton = document.getElementById('toggle-button');
+    const audioToggleButton = document.getElementById('audio-toggle-btn');
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    const backgroundAudio = document.getElementById('background-audio');
+
+    // Defusion View
+    const thoughtInput = document.getElementById('thought-input');
+    const defuseButton = document.getElementById('defuse-button');
+    const defusionOutput = document.getElementById('defusion-output');
+
+    // Values View
+    const saveValuesButton = document.getElementById('save-values-button');
+    const valueInputs = { relations: document.getElementById('value-relations'), work: document.getElementById('value-work'), growth: document.getElementById('value-growth') };
+    const newActionInput = document.getElementById('new-action-input');
+    const addActionBtn = document.getElementById('add-action-btn');
+    const pendingActionsList = document.getElementById('pending-actions-list');
+    const completedActionsList = document.getElementById('completed-actions-list');
+    const congratsModal = document.getElementById('congrats-modal');
+    const saveStatus = document.getElementById('save-status');
+
+    // Learn View
+    const learnMenu = document.getElementById('learn-menu');
+    const learnMenuItems = document.querySelectorAll('.learn-menu-item');
+    const learnDetailViews = document.querySelectorAll('.learn-detail-view');
+    const learnBackButtons = document.querySelectorAll('.learn-back-button');
+    const toggleMoreInfoButtons = document.querySelectorAll('.toggle-more-info');
+
+    // Journey View
+    const journeyIntention = document.getElementById('journey-intention');
+    const calendarContainer = document.getElementById('calendar-container');
+    const journeyValues = document.getElementById('journey-values');
+    const journeyThoughts = document.getElementById('journey-thoughts');
+    
+    // Chat View
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatLoading = document.getElementById('chat-loading');
+    
+    // --- APP STATE ---
+    let currentView = 'calm-view';
+    let isBreathing = false;
+    let animationTimeout;
+    let instructionInterval;
+    let currentOnboardingSlide = 0;
+    let chatHistory = [];
+    let actions = { pending: [], completed: [] };
+    
+    // --- ONBOARDING LOGIC ---
+    function showOnboardingSlide(index) {
+        onboardingSlides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+    }
+    
+    function populateCountryCodes() {
+        const countryCodes = [
+            { name: 'Mexico', code: '52', flag: '🇲🇽' },
+            { name: 'USA', code: '1', flag: '🇺🇸' },
+            { name: 'Afghanistan', code: '93', flag: '🇦🇫' },
+            { name: 'Spain', code: '34', flag: '🇪🇸' },
+            { name: 'Argentina', code: '54', flag: '🇦🇷' },
+            // Add more countries as needed
+        ];
+        const select = document.getElementById('onboarding-country-code');
+        countryCodes.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.code;
+            option.textContent = `${country.flag} +${country.code}`;
+            if (country.name === 'Mexico') {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    }
+
+    onboardingNextButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            currentOnboardingSlide++;
+            if (currentOnboardingSlide < onboardingSlides.length) {
+                showOnboardingSlide(currentOnboardingSlide);
+            }
+        });
+    });
+
+    finishOnboardingButton.addEventListener('click', () => {
+        const name = document.getElementById('onboarding-name').value;
+        const age = document.getElementById('onboarding-age').value;
+        const email = document.getElementById('onboarding-email').value;
+        const countryCode = document.getElementById('onboarding-country-code').value;
+        const phone = document.getElementById('onboarding-phone').value;
+        const fullPhone = `+${countryCode}${phone}`;
+        const intention = document.getElementById('onboarding-intention').value;
+        
+        localStorage.setItem('mindraUserName', name);
+        localStorage.setItem('mindraUserAge', age);
+        localStorage.setItem('mindraUserEmail', email);
+        localStorage.setItem('mindraUserPhone', fullPhone);
+        localStorage.setItem('mindraUserIntention', intention);
+        localStorage.setItem('mindraOnboardingComplete', 'true');
+        
+        submitToGoogleSheet({ nombre: name, edad: age, email: email, telefono: fullPhone, intencion: intention });
+
+        onboardingContainer.style.display = 'none';
+        appContainer.classList.remove('hidden');
+    });
+    
+    function checkOnboarding() {
+        if (!localStorage.getItem('mindraOnboardingComplete')) {
+            onboardingContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+            showOnboardingSlide(0);
+        } else {
+            onboardingContainer.style.display = 'none';
+            appContainer.classList.remove('hidden');
+        }
+    }
+
+    // --- GOOGLE SHEETS INTEGRATION ---
+    function submitToGoogleSheet(data) {
+        const SCRIPT_URL = "AQUÍ_VA_LA_URL_DE_TU_SCRIPT_DE_GOOGLE"; 
+        try {
+            if (SCRIPT_URL && SCRIPT_URL !== "AQUÍ_VA_LA_URL_DE_TU_SCRIPT_DE_GOOGLE") {
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    body: JSON.stringify(data),
+                    headers: { "Content-Type": "application/json" },
+                })
+                .then(response => console.log("Solicitud enviada a Google Sheets."))
+                .catch(err => console.error("Error al enviar datos a Google Sheets:", err));
+            }
+        } catch (error) {
+            console.error("Error en el envío a Google Sheets:", error);
+        }
+    }
+
+    // --- NAVIGATION LOGIC ---
+    function switchView(viewName) {
+        if (isBreathing) stopBreathing();
+
+        views.forEach(view => view.classList.remove('active'));
+        document.getElementById(viewName).classList.add('active');
+        
+        navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewName));
+        
+        if (viewName === 'learn-view') {
+            learnDetailViews.forEach(v => v.classList.remove('active'));
+            learnMenu.style.display = 'block';
+        }
+        if (viewName === 'journey-view') {
+            renderJourneyView();
+        }
+        if (viewName === 'chat-view') {
+            loadChatHistory();
+        }
+        
+        currentView = viewName;
+    }
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => switchView(button.dataset.view));
+    });
+
+    learnMenuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetId = item.dataset.target;
+            learnMenu.style.display = 'none';
+            document.getElementById(targetId).classList.add('active');
+            loadPersonalNote(targetId);
+        });
+    });
+
+    learnBackButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            button.parentElement.classList.remove('active');
+            learnMenu.style.display = 'block';
+        });
+    });
+    
+    toggleMoreInfoButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const moreInfoDiv = button.nextElementSibling;
+            const isHidden = moreInfoDiv.classList.toggle('hidden');
+            button.textContent = isHidden ? 'Saber más...' : 'Ocultar';
+        });
+    });
+
+    // --- CALM VIEW LOGIC ---
+    const mindfulPrompts = [
+        "Relaja tus hombros, déjalos caer.",
+        "Siente el aire entrando por tu nariz.",
+        "Concéntrate en el movimiento del círculo.",
+        "Nota cómo tu abdomen se expande.",
+        "Suaviza los músculos de tu cara.",
+        "Permite que tus pensamientos fluyan, sin aferrarte a ellos."
+    ];
+    let promptIndex = 0;
+
+    function showNextPrompt() {
+        breathingInstructions.style.opacity = 0;
+        setTimeout(() => {
+            promptIndex = (promptIndex + 1) % mindfulPrompts.length;
+            breathingInstructions.textContent = mindfulPrompts[promptIndex];
+            breathingInstructions.style.opacity = 1;
+        }, 1000);
+    }
+
+    function stopBreathing() {
+        isBreathing = false;
+        clearTimeout(animationTimeout);
+        clearInterval(instructionInterval);
+        toggleButton.textContent = 'Empezar';
+        breathingText.style.opacity = 0;
+        breathingInstructions.style.opacity = 0;
+        circle.style.transform = 'scale(0.4)';
+        bodyBg.style.backgroundColor = 'var(--sage-green)';
+    }
+
+    function runBreathingCycle() {
+        if (!isBreathing) return;
+        breathingText.textContent = 'Inhala';
+        circle.style.transform = 'scale(1)';
+        bodyBg.style.backgroundColor = 'var(--lavender-purple)';
+        animationTimeout = setTimeout(() => {
+            if (!isBreathing) return;
+            breathingText.textContent = 'Sostén';
+            animationTimeout = setTimeout(() => {
+                if (!isBreathing) return;
+                breathingText.textContent = 'Exhala';
+                circle.style.transform = 'scale(0.4)';
+                bodyBg.style.backgroundColor = 'var(--sage-green)';
+                animationTimeout = setTimeout(() => {
+                    if (!isBreathing) return;
+                    breathingText.textContent = 'Sostén';
+                    animationTimeout = setTimeout(runBreathingCycle, 1500);
+                }, 6000);
+            }, 1500);
+        }, 4000);
+    }
+
+    toggleButton.addEventListener('click', () => {
+        isBreathing = !isBreathing;
+        if (isBreathing) {
+            toggleButton.textContent = 'Detener';
+            breathingText.style.opacity = 1;
+            breathingInstructions.textContent = mindfulPrompts[0];
+            breathingInstructions.style.opacity = 1;
+            instructionInterval = setInterval(showNextPrompt, 7000);
+            runBreathingCycle();
+        } else {
+            stopBreathing();
+            addCalmSessionToLog();
+        }
+    });
+
+    audioToggleButton.addEventListener('click', () => {
+        if (backgroundAudio.paused) {
+            backgroundAudio.play();
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+        } else {
+            backgroundAudio.pause();
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+        }
+    });
+    
+    // --- CHAT VIEW LOGIC ---
+    async function handleSendMessage() {
+        const userInput = chatInput.value.trim();
+        if (!userInput) return;
+        
+        addMessageToUI(userInput, 'user');
+        chatHistory.push({ role: "user", parts: [{ text: userInput }] });
+        chatInput.value = '';
+        chatLoading.classList.remove('hidden');
+        chatSendBtn.disabled = true;
+
+        try {
+            const response = await fetch('/.netlify/functions/chat', {
+                method: 'POST',
+                body: JSON.stringify({ history: chatHistory })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || `Error del servidor: ${response.statusText}`);
+            }
+            
+            let modelResponse = "Lo siento, no pude procesar tu solicitud en este momento.";
+            if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                modelResponse = result.candidates[0].content.parts[0].text;
+            }
+            
+            addMessageToUI(modelResponse, 'model');
+            chatHistory.push({ role: "model", parts: [{ text: modelResponse }] });
+            saveChatHistory();
+
+        } catch (error) {
+            console.error("Error en la función de chat:", error);
+            addMessageToUI(`Hubo un problema al conectar: ${error.message}. Asegúrate de que la clave de API esté configurada correctamente en Netlify.`, 'model');
+        } finally {
+            chatLoading.classList.add('hidden');
+            chatSendBtn.disabled = false;
+        }
+    }
+
+    function addMessageToUI(text, role) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `w-full flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        const bubble = document.createElement('div');
+        bubble.className = `max-w-xs md:max-w-md p-3 rounded-lg ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-model'}`;
+        bubble.textContent = text;
+        
+        messageDiv.appendChild(bubble);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function saveChatHistory() {
+        localStorage.setItem('mindraChatHistory', JSON.stringify(chatHistory));
+    }
+
+    function loadChatHistory() {
+        const savedHistory = localStorage.getItem('mindraChatHistory');
+        if (savedHistory) {
+            chatHistory = JSON.parse(savedHistory);
+            chatMessages.innerHTML = '';
+            chatHistory.forEach(msg => addMessageToUI(msg.parts[0].text, msg.role));
+        } else {
+             addMessageToUI("¡Hola! Soy tu asistente de Mindra. ¿Cómo te sientes hoy? ¿Hay algo que te gustaría explorar?", 'model');
+        }
+    }
+
+    chatSendBtn.addEventListener('click', handleSendMessage);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleSendMessage();
+        }
+    });
+
+    // --- DEFUSION VIEW LOGIC ---
+    defuseButton.addEventListener('click', () => {
+        const thought = thoughtInput.value.trim();
+        if (!thought) { defusionOutput.innerHTML = `<p style="color: var(--deep-indigo);">Por favor, escribe un pensamiento para empezar.</p>`; return; }
+        defusionOutput.innerHTML = '';
+        const techniques = [ { title: 'Observa el pensamiento', text: `Estoy teniendo el pensamiento de que "${thought}"` }, { title: 'Agradece a tu mente', text: `Gracias, mente, por este pensamiento tan interesante.` }, { title: 'Nombra la historia', text: `Ah, aquí está de nuevo la historia de "${thought}". La conozco bien.` } ];
+        techniques.forEach(tech => {
+            const card = document.createElement('div');
+            card.className = 'content-card p-4 rounded-lg';
+            card.innerHTML = `<h3 class="text-lg">${tech.title}</h3><p class="mt-1">${tech.text}</p>`;
+            defusionOutput.appendChild(card);
+        });
+        addThoughtToLog(thought);
+    });
+
+    // --- VALUES VIEW LOGIC ---
+    function saveValuesData() {
+        const dataToSave = { 
+            relations: valueInputs.relations.value, 
+            work: valueInputs.work.value, 
+            growth: valueInputs.growth.value,
+            actions: actions
+        };
+        localStorage.setItem('actToolboxValues', JSON.stringify(dataToSave));
+        saveStatus.textContent = '¡Guardado!';
+        setTimeout(() => { saveStatus.textContent = ''; }, 2000);
+    }
+    
+    function loadValuesData() {
+        const savedData = localStorage.getItem('actToolboxValues');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            valueInputs.relations.value = data.relations || '';
+            valueInputs.work.value = data.work || '';
+            valueInputs.growth.value = data.growth || '';
+            actions = data.actions || { pending: [], completed: [] };
+            renderActions();
+        }
+    }
+
+    function renderActions() {
+        pendingActionsList.innerHTML = '';
+        completedActionsList.innerHTML = '';
+        actions.pending.forEach((action, index) => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center content-card p-2 rounded-lg';
+            li.innerHTML = `<input type="checkbox" data-index="${index}" class="form-checkbox h-5 w-5 rounded text-misty-turquoise focus:ring-lavender-purple"> <span class="ml-3">${action}</span>`;
+            pendingActionsList.appendChild(li);
+        });
+        actions.completed.forEach(action => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center content-card p-2 rounded-lg';
+            li.innerHTML = `<span class="ml-3 line-through" style="color: var(--stone-gray);">${action}</span>`;
+            completedActionsList.appendChild(li);
+        });
+    }
+
+    addActionBtn.addEventListener('click', () => {
+        const newAction = newActionInput.value.trim();
+        if (newAction) {
+            actions.pending.push(newAction);
+            newActionInput.value = '';
+            renderActions();
+            saveValuesData();
+        }
+    });
+
+    pendingActionsList.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox') {
+            const index = parseInt(e.target.dataset.index, 10);
+            const completedAction = actions.pending.splice(index, 1)[0];
+            actions.completed.push(completedAction);
+            renderActions();
+            saveValuesData();
+            showCongratsModal();
+        }
+    });
+    
+    function showCongratsModal() {
+        congratsModal.classList.remove('hidden');
+        setTimeout(() => {
+            congratsModal.classList.add('hidden');
+        }, 2500);
+    }
+
+    saveValuesButton.addEventListener('click', saveValuesData);
+
+    // --- PERSONAL NOTES LOGIC ---
+    document.querySelectorAll('.toggle-note-form').forEach(button => {
+        button.addEventListener('click', () => button.nextElementSibling.classList.toggle('hidden'));
+    });
+    document.querySelectorAll('.save-note-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const noteForm = button.parentElement;
+            const detailView = noteForm.closest('.learn-detail-view');
+            const noteText = noteForm.querySelector('textarea').value;
+            localStorage.setItem(`mindraNote-${detailView.id}`, noteText);
+            noteForm.classList.add('hidden');
+            loadPersonalNote(detailView.id);
+        });
+    });
+    function loadPersonalNote(detailViewId) {
+        const note = localStorage.getItem(`mindraNote-${detailViewId}`);
+        const detailView = document.getElementById(detailViewId);
+        const noteContainer = detailView.querySelector('.personal-note');
+        if (note) {
+            noteContainer.querySelector('p').textContent = note;
+            noteContainer.classList.remove('hidden');
+        } else {
+            noteContainer.classList.add('hidden');
+        }
+    }
+
+    // --- JOURNEY VIEW LOGIC ---
+    function addCalmSessionToLog() {
+        const today = new Date().toISOString().split('T')[0];
+        let sessions = JSON.parse(localStorage.getItem('mindraCalmSessions') || '[]');
+        if (!sessions.includes(today)) {
+            sessions.push(today);
+            localStorage.setItem('mindraCalmSessions', JSON.stringify(sessions));
+        }
+    }
+    function addThoughtToLog(thought) {
+        let thoughts = JSON.parse(localStorage.getItem('mindraDefusionThoughts') || '[]');
+        thoughts.unshift(thought);
+        if (thoughts.length > 10) thoughts.pop();
+        localStorage.setItem('mindraDefusionThoughts', JSON.stringify(thoughts));
+    }
+    function renderJourneyView() {
+        journeyIntention.textContent = localStorage.getItem('mindraUserIntention') || 'No se ha definido una intención.';
+        renderCalendar();
+        const valuesData = JSON.parse(localStorage.getItem('actToolboxValues') || '{}');
+        journeyValues.innerHTML = `<p><strong>Relaciones:</strong> ${valuesData.relations || '...'}</p><p><strong>Trabajo/Estudio:</strong> ${valuesData.work || '...'}</p><p><strong>Crecimiento:</strong> ${valuesData.growth || '...'}</p>`;
+        const thoughts = JSON.parse(localStorage.getItem('mindraDefusionThoughts') || '[]');
+        journeyThoughts.innerHTML = thoughts.length ? thoughts.map(t => `<li>${t}</li>`).join('') : '<li>Aún no has trabajado ningún pensamiento.</li>';
+    }
+    function renderCalendar() {
+        calendarContainer.innerHTML = '';
+        const sessions = JSON.parse(localStorage.getItem('mindraCalmSessions') || '[]');
+        const today = new Date();
+        const month = today.getMonth();
+        const year = today.getFullYear();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        ['D', 'L', 'M', 'M', 'J', 'V', 'S'].forEach(day => {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'font-bold';
+            dayEl.textContent = day;
+            calendarContainer.appendChild(dayEl);
+        });
+        for (let i = 0; i < firstDay; i++) {
+            calendarContainer.appendChild(document.createElement('div'));
+        }
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayEl = document.createElement('div');
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            dayEl.textContent = i;
+            if (sessions.includes(dateStr)) {
+                dayEl.className = 'bg-emerald-300 rounded-full';
+            }
+            calendarContainer.appendChild(dayEl);
+        }
+    }
+    
+    // --- APP INITIALIZATION ---
+    checkOnboarding();
+    populateCountryCodes();
+    loadValuesData();
+});
+</script>
+</body>
+</html>
