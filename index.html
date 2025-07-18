@@ -454,9 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GOOGLE SHEETS INTEGRATION ---
     function submitToGoogleSheet(data) {
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydBeQLa4ipPT_Bo_7gpDTlhU-gGTTodxKHUDHGWaemubAXCuZVty9Qpub0CxOtxObm/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9oxY8ljOT0tRnSyK2E51MRTOxB3jmlX4Syc4HYRCMsJi074c6ygaF7B8YZ8DRy-c/exec"; 
         try {
-            if (SCRIPT_URL && SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbydBeQLa4ipPT_Bo_7gpDTlhU-gGTTodxKHUDHGWaemubAXCuZVty9Qpub0CxOtxObm/exec") {
+            if (SCRIPT_URL && SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbz9oxY8ljOT0tRnSyK2E51MRTOxB3jmlX4Syc4HYRCMsJi074c6ygaF7B8YZ8DRy-c/exec") {
                 fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'cors',
@@ -850,4 +850,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
